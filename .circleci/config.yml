@@ -1,13 +1,21 @@
 version: '2.1'
 
 orbs:
-  github-cli: circleci/github-cli@2.3.0
+  github-cli: circleci/github-cli@2.7.2
+  node: circleci/node@7.2.1
+  rust: circleci/rust@1.7.0
 
 executors:
   gradle:
     working_directory: ~/workspace
     docker:
-      - image: cimg/openjdk:20.0
+      - image: cimg/openjdk:21.0.9
+  node:
+    docker:
+      - image: cimg/node:lts
+  rust:
+    docker:
+      - image: cimg/rust:1.93.0
 
 commands:
   check-changed-files-or-halt:
@@ -19,28 +27,32 @@ commands:
   retrieve_cache:
     steps:
       - restore_cache:
-          key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+          key: v2-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
       - restore_cache:
-          key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
-      - restore_cache:
-          key: v1-plugin-verifier-cache-{{ checksum "build.gradle.kts" }}
+          key: v2-gradle-cache-{{ checksum "build.gradle.kts" }}
   create_or_update_cache:
     steps:
       - save_cache:
           paths:
             - ~/.gradle/wrapper
-          key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+          key: v2-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
       - save_cache:
           paths:
             - ~/.gradle/caches
-          key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
-      - save_cache:
-          paths:
-            - ~/.pluginVerifier
-          key: v1-plugin-verifier-cache-{{ checksum "build.gradle.kts" }}
+          key: v2-gradle-cache-{{ checksum "build.gradle.kts" }}
 
 jobs:
-  test:
+  test-node-renderer:
+    executor: node
+    steps:
+      - checkout
+      - node/install-packages:
+          app-dir: src/node-mjml-renderer
+      - run:
+          name: Run tests
+          command: cd src/node-mjml-renderer && npm run test
+
+  test-plugin:
     resource_class: large
     executor: gradle
     steps:
@@ -49,15 +61,18 @@ jobs:
       - run:
           name: Run tests
           command: ./gradlew test
-      - run:
-          name: Run pluginVerifier
-          command: ./gradlew runPluginVerifier
-          no_output_timeout: 20m
       - store_test_results:
           path: build/test-results/test
       - store_artifacts:
           path: build/test-results/test
       - create_or_update_cache
+
+  test-wasi-renderer:
+    executor: rust
+    steps:
+      - checkout
+      - rust/test:
+          working_directory: ~/project/src/wasm-mrml-renderer
 
   build:
     executor: gradle
@@ -122,24 +137,30 @@ jobs:
 workflows:
   continious:
     jobs:
-      - test:
+      - test-plugin:
+          requires:
+            - build
           filters:
             branches:
               only: /.*/
-            tags:
+      - test-node-renderer:
+          filters:
+            branches:
+              only: /.*/
+      - test-wasi-renderer:
+          filters:
+            branches:
               only: /.*/
       - build_and_publish_snapshot:
           requires:
-            - test
+            - test-plugin
+            - test-node-renderer
+            - test-wasi-renderer
           filters:
             branches:
-              only: main
+              only: /.*/
       - build:
-          requires:
-            - test
           filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /.*/
       - create_github_release:

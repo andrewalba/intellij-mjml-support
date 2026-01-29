@@ -7,7 +7,6 @@ import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefClient
 import com.intellij.ui.jcef.JBCefJSQuery
 import com.intellij.ui.jcef.JCEFHtmlPanel
-import kotlinx.coroutines.selects.select
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefLoadHandlerAdapter
@@ -17,8 +16,6 @@ import kotlin.random.Random.Default.nextInt
 class MjmlJCEFHtmlPanel : JCEFHtmlPanel(getClassUrl()) {
 
     companion object {
-        internal const val RENDERER_ARCHIVE_NAME = "renderer.zip"
-
         private fun getClassUrl(): String {
             val url = try {
                 val cls = MjmlJCEFHtmlPanel::class.java

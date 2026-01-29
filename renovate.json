@@ -2,5 +2,16 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>timo-reymann/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "groupName": "Chicory",
+      "groupSlug": "chicory",
+      "matchPackageNames": [
+        "com.dylibso.chicory:wasi",
+        "com.dylibso.chicory:runtime",
+        "com.dylibso.chicory:compiler"
+      ]
+    }
   ]
 }

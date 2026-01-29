@@ -10,12 +10,13 @@ intellij-mjml-support
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ftimo-reymann%2Fintellij-mjml-support.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ftimo-reymann%2Fintellij-mjml-support?ref=badge_shield)
 
 <p align="center">
-	<img width="300" src="./src/main/resources/META-INF/pluginIcon.svg">
+	<img width="800" src="./.github/images/feature_gallery.gif">
 	<br />
     MJML support for the IntelliJ Platform.
 </p>
 
 ## Features
+
 - Syntax highlighting
 - Inspections for your MJML code
 - Powerful Live-Preview and tooling
@@ -23,13 +24,16 @@ intellij-mjml-support
 - Support for custom MJML components
 
 ## Requirements
+
 - IDEA-based IDE compatible with the plugin
 
 ## Installation
+
 1. Press (Ctrl+Alt+S/⌘/) to open the IDE settings and select Plugins.
 2. Search for `MJML Support` in the Marketplace and click Install.
 
 ### You live on the edge?
+
 There is also the channel `snapshot` (https://plugins.jetbrains.com/plugins/snapshot/list) available, for more details
 about set up please
 see [JetBrains Marketplace Docs](https://plugins.jetbrains.com/docs/marketplace/custom-release-channels.html#configuring-a-custom-channel-in-intellij-platform-based-ides)
@@ -37,13 +41,16 @@ see [JetBrains Marketplace Docs](https://plugins.jetbrains.com/docs/marketplace/
 The versioning used there is not based on semantic versioning, but rather: `YYYY.MM.DD-BUILDNUM` and is on
 
 ## Usage
+
 - MJML files are automatically picked, you can also find some
   screenshots in the marketplace.
 
 ## Motivation
+
 I wanted MJML Support for my beloved JetBrains IDEs.
 
 ## Contributing
+
 I love your input! I want to make contributing to this project as easy and transparent as possible, whether it's:
 
 - Reporting a bug
@@ -55,68 +62,53 @@ I love your input! I want to make contributing to this project as easy and trans
 To get started please read the [Contribution Guidelines](./CONTRIBUTING.md).
 
 ## Documentation
+
 ### Extending plugin functionality with additional plugins
+
 If you want to support custom functionality or resolving maybe specific
-to the needs your company, there are some entrypoints available.
+to the needs of your company, there are some entrypoints available.
 
 #### Custom mjml resolution
 
 You want to add custom mjml tags or custom resolving to match your needs?
 
-Simply use the extension point `de.timo_reymann.intellij-mjml-support.tagInformationProvider`:
+Use the extension point `de.timo_reymann.intellij-mjml-support.tagInformationProvider`:
 
 ```xml
+
 <extensions defaultExtensionNs="de.timo_reymann.intellij-mjml-support">
     <tagInformationProvider implementation="my.company.OurCustomTaginformationProvider"/>
 </extensions>
 ```
 
-### Custom rendering
+### [Custom rendering](https://plugins.jetbrains.com/plugin/16418-mjml-support/tutorials/custom-rendering-script)
 
-- Execution context: parent folder for file to render
-- Input from stdin:
-  ```json
-    {
-      "directory": "absolute path to project root, this might be different from the current file location",
-      "content": "file editor content to render",
-      "filePath": "absolute path to file",
-      "options": {
-        "mjmlConfigPath": "mjml config path or empty string"
-      }
-    }
-  ```
-- Output to stdout must be in json in this format for:
-  ```json
-    {
-      "html": "string|null",
-      "errors": [
-        {
-          "line": "integr|null",
-          "message":  "string|null",
-          "tagName": "string|null",
-          "formattedMessage": "string|null"
-        }
-      ]
-    }
-  ```
-  where errors can be empty, but can never be omitted!
+You can provide custom rendering backend implementations following the [Tutorial](https://plugins.jetbrains.com/plugin/16418-mjml-support/tutorials/custom-rendering-script)
 
 ### Notes about implementation
 
-- The preview editor support is adapted from the official markdown plugin
-- Preview uses bundled node_modules for mjml rendering currently, support for custom rendering is currently in
-  development
+- The preview editor support is adapted from the official Markdown plugin
+- Preview for rendering is available
+    - using Node.js with bundled node_modules for MJML rendering, with the possibility to use custom mjml config and
+      specify custom node scripts
+    - bundled MRML for MJML rendering, with the possibility to use custom WASI implementations
 
 ### Architecture Decision Records
-For [architecture decision records](https://adr.github.io/) please take a look at [docs/adr](./docs/adr), this will give
+
+For [architecture decision records](https://adr.github.io/) please take a look at [docs/adr;](./docs/adr) this will give
 you an idea why implementations are as they are.
 
 ## Development
 
 ### Requirements
+
 - [Java](https://openjdk.org/)
+- [Gradle](https://gradle.org/)
+- [Node.js](https://nodejs.org/en/download)
+- [Rust](https://www.rust-lang.org/tools/install)
 
 ### Test
+
 ```shell
 # To run unit tests
 ./gradlew test
@@ -126,6 +118,7 @@ you an idea why implementations are as they are.
 ```
 
 ### Build
+
 ```shell
 ./gradlew buildPlugin
 ```

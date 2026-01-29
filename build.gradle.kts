@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 fun getVersionDetails(): com.palantir.gradle.gitversion.VersionDetails =
     (extra["versionDetails"] as groovy.lang.Closure<*>)() as com.palantir.gradle.gitversion.VersionDetails
 
@@ -23,46 +25,70 @@ when {
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 plugins {
     id("java")
-    kotlin("jvm") version "1.9.22"
-    id("org.jetbrains.intellij") version "1.17.1"
-    id("com.palantir.git-version") version "3.0.0"
+    kotlin("jvm") version "2.3.0"
+    id("org.jetbrains.intellij.platform") version "2.11.0"
+    id("com.palantir.git-version") version "3.3.0"
     id("com.adarshr.test-logger") version "4.0.0"
 }
 
 dependencies {
-    implementation(kotlin("reflect"))
+    implementation("com.dylibso.chicory","runtime","1.6.1")
+    implementation("com.dylibso.chicory","wasi","1.6.1")
+    implementation("com.dylibso.chicory","compiler","1.6.1")
+
     testImplementation("junit", "junit", "4.13.2")
+
+    implementation(kotlin("reflect"))
+    intellijPlatform {
+        create(providers.gradleProperty("platform-type").get(),providers.gradleProperty("platform-version").get()) {}
+        pluginVerifier()
+        zipSigner()
+        bundledPlugins(
+            listOf(
+                "com.intellij.css",
+                "HtmlTools",
+                "JavaScript",
+            )
+        )
+        testFramework(TestFrameworkType.Platform)
+    }
+
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
-intellij {
-    version.set(properties["idea-version"] as String)
-    updateSinceUntilBuild.set(false)
-    downloadSources.set(true)
-    pluginName.set("MJML Support")
-    plugins.set(
-        listOf(
-            "com.intellij.css",
-            "HtmlTools",
-            "JavaScript"
-        )
-    )
+intellijPlatform {
+    pluginConfiguration {
+        name = "MJML Support"
+        ideaVersion {
+            sinceBuild = "251"
+            untilBuild = provider { null }
+        }
+    }
+
+    pluginVerification {
+        ides {
+            recommended()
+        }
+    }
+
+    publishing {
+        token = System.getenv("JB_TOKEN")
+        channels = releaseChannels.toList()
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 tasks {
-    compileKotlin {
-        kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
-    compileJava {
-        sourceCompatibility = JavaVersion.VERSION_17.toString()
-        targetCompatibility = JavaVersion.VERSION_17.toString()
-    }
-
     test {
         testLogging {
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -72,32 +98,5 @@ tasks {
 
         // Prevent "File access outside allowed roots" in multi-module tests, because modules each have an .iml
         environment("NO_FS_ROOTS_ACCESS_CHECK", "1")
-    }
-
-    patchPluginXml {
-        setVersion(project.version)
-    }
-
-    publishPlugin {
-        dependsOn("patchPluginXml")
-        token.set(System.getenv("JB_TOKEN"))
-        channels.set(releaseChannels.toList())
-    }
-
-    runPluginVerifier {
-        ideVersions.set(
-            // Generated with https://github.com/timo-reymann/script-shelve/blob/master/jetbrains/query_ide_versions_for_verifier.py
-            listOf(
-                "RD-232.9921.83", // 2023.2.2
-                "WS-232.9921.42", // 2023.2.2
-                "IU-232.9921.47", // 2023.2.2
-                "PS-232.9921.55", // 2023.2.2
-            )
-        )
-        failureLevel.set(
-            listOf(
-                org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel.INVALID_PLUGIN
-            )
-        )
     }
 }

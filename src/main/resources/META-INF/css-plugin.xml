@@ -16,5 +16,12 @@
 
         <fileBasedIndex implementation="de.timo_reymann.mjml_support.index.MjmlClassUsageIndex"/>
         <fileBasedIndex implementation="de.timo_reymann.mjml_support.index.MjmlClassDefinitionIndex"/>
+
+        <psi.referenceContributor language="mjml"
+                                  implementation="de.timo_reymann.mjml_support.reference.MjmlPathAttributeTypeReferenceContributor"/>
+
+        <completion.contributor language="mjml"
+                                order="first"
+                                implementationClass="de.timo_reymann.mjml_support.completion.MjmlPathAttributeTypeCompletionContributor"/>
     </extensions>
 </idea-plugin>

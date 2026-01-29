@@ -34,18 +34,14 @@ import de.timo_reymann.mjml_support.bundle.MjmlBundle
 import de.timo_reymann.mjml_support.editor.filelistener.MJML_FILE_CHANGED_TOPIC
 import de.timo_reymann.mjml_support.editor.filelistener.MjmlFileChangedListener
 import de.timo_reymann.mjml_support.editor.provider.JCEFHtmlPanelProvider
-import de.timo_reymann.mjml_support.editor.render.MJML_PREVIEW_FORCE_RENDER_TOPIC
-import de.timo_reymann.mjml_support.editor.render.MjmlForceRenderListener
-import de.timo_reymann.mjml_support.editor.render.MjmlRenderer
-import de.timo_reymann.mjml_support.editor.render.renderError
+import de.timo_reymann.mjml_support.editor.rendering.*
 import de.timo_reymann.mjml_support.index.getFilesWithIncludesFor
 import de.timo_reymann.mjml_support.settings.MJML_SETTINGS_CHANGED_TOPIC
 import de.timo_reymann.mjml_support.settings.MjmlSettings
 import de.timo_reymann.mjml_support.settings.MjmlSettingsChangedListener
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Entities
 import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -60,13 +56,15 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 
+@OptIn(DelicateCoroutinesApi::class)
 class MjmlPreviewFileEditor(private val project: Project, private val virtualFile: VirtualFile) :
     UserDataHolderBase(), FileEditor, MjmlSettingsChangedListener, MjmlForceRenderListener, MjmlFileChangedListener {
 
     private val document: Document? = FileDocumentManager.getInstance().getDocument(virtualFile)
     private val htmlPanelWrapper: JPanel
     private val panelText: JLabel = JLabel("", SwingConstants.CENTER)
-    private val mjmlRenderer = MjmlRenderer(project, virtualFile)
+    private val mjmlRenderer: BaseMjmlRenderer
+        get() = MjmlRendererService.getInstance(project).getRenderer()
     private val pooledAlarm = Alarm(Alarm.ThreadToUse.POOLED_THREAD, this)
     private val swingAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
     private val requestsLock = Any()
@@ -102,11 +100,15 @@ class MjmlPreviewFileEditor(private val project: Project, private val virtualFil
 
 
     private fun updatePreviewWidth(width: Int) {
-        val size = Dimension(width + PREVIEW_PADDING, 300)
+        val size = Dimension(width + PREVIEW_PADDING, htmlPanel?.component?.size?.height ?: 300)
         getSplitter()?.proportion = 1f
         // Set panel wrapper width, minimum size is used by splitter
         htmlPanelWrapper.minimumSize = size
         htmlPanel?.component?.size = size
+        // Avoid layout shifting
+        htmlPanelWrapper.revalidate()
+        htmlPanelWrapper.repaint()
+
     }
 
     override fun getPreferredFocusedComponent(): JComponent? = htmlPanel?.component
@@ -198,31 +200,35 @@ class MjmlPreviewFileEditor(private val project: Project, private val virtualFil
 
         previousText = currentText
 
-        val isValidMjml = MjmlSettings.getInstance(project).skipMjmlValidation || isValidMjmlDocument()
+        val mjmlSettings = MjmlSettings.getInstance(project)
 
-        val html = if (isValidMjml) {
-            val doc = Jsoup.parse(mjmlRenderer.render(currentText))
-            doc.outputSettings().escapeMode(Entities.EscapeMode.base)
-            doc.outputSettings().charset("ASCII")
-            doc.html()
+        val html = if (isValidMjmlDocument()) {
+            mjmlRenderer.renderToHtml(virtualFile, currentText)
+        } else if (!currentText.trimStart().startsWith("<mjml>") && mjmlSettings.tryWrapMjmlFragment) {
+            mjmlRenderer.renderFragmentToHtml(virtualFile, currentText)
+        } else if (mjmlSettings.skipMjmlValidation) {
+            mjmlRenderer.renderToHtml(virtualFile, currentText)
         } else {
-            lateinit var includes: Collection<VirtualFile>
-            // While indexing still runs the editor might already be open
-            if (DumbService.isDumb(project)) {
-                includes = listOf()
-            } else {
-                ReadAction.run<Exception> {
-                    includes = getFilesWithIncludesFor(virtualFile, project)
-                }
-            }
-
             renderError(
                 MjmlBundle.message("mjml_preview.unavailable"),
-                MjmlBundle.message(if (includes.isEmpty()) "mjml_preview.invalid_file_standalone" else "mjml_preview.invalid_file_include")
+                MjmlBundle.message(if (getMjmlIncludes().isEmpty()) "mjml_preview.invalid_file_standalone" else "mjml_preview.invalid_file_include")
             )
         }
 
         scheduleHtmlUpdate(html, force)
+    }
+
+    private fun getMjmlIncludes(): Collection<VirtualFile> {
+        lateinit var includes: Collection<VirtualFile>
+        // While indexing still runs the editor might already be open
+        if (DumbService.isDumb(project)) {
+            includes = listOf()
+        } else {
+            ReadAction.run<Exception> {
+                includes = getFilesWithIncludesFor(virtualFile, project)
+            }
+        }
+        return includes
     }
 
     private fun scheduleHtmlUpdate(html: String, force: Boolean) {

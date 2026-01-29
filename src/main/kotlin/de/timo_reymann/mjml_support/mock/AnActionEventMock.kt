@@ -1,23 +1,21 @@
 package de.timo_reymann.mjml_support.mock
 
-import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 
 /**
  * Create an empty AnActionEvent
  */
-class AnActionEventMock() : AnActionEvent( null,
-     DummyDataContext(),
-    "",
-    Presentation(),
-    ActionManager.getInstance(),
-    0) {
-}
-
-internal class DummyDataContext : DataContext {
-    override fun getData(dataId: String): Any? {
-        return null
+object AnActionEventMock {
+    fun create(): AnActionEvent {
+        return AnActionEvent.createEvent(
+            SimpleDataContext.builder().build(),
+            Presentation(),
+            "",
+            ActionUiKind.TOOLBAR,
+            null,
+        )
     }
 }

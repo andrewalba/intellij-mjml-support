@@ -1,6 +1,5 @@
 package de.timo_reymann.mjml_support.editor.ui
 
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ActionUpdateThread.BGT
 import com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
@@ -42,17 +41,13 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
             }
 
             // Trigger manual click, this is necessary because we don't have access to the underlying layout directly
-            val event = AnActionEventMock()
+            val event = AnActionEventMock.create()
             when (state.splitLayout) {
                 Layout.SHOW_EDITOR -> showEditorAction.setSelected(event, true)
                 Layout.SHOW_PREVIEW -> showPreviewAction.setSelected(event, true)
                 else -> showEditorAndPreviewAction.setSelected(event, true)
             }
         }
-    }
-
-    override fun isShowFloatingToolbar(): Boolean {
-        return false;
     }
 
     override fun isVerticalSplit(): Boolean {
@@ -78,7 +73,7 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
         object : AnAction(
             MjmlBundle.message("split_editor.action.refresh.text"),
             MjmlBundle.message("split_editor.action.refresh.description"),
-            AllIcons.Actions.Refresh,
+            EditorIcons.REFRESH,
         ) {
             override fun actionPerformed(e: AnActionEvent) {
                 secondEditor.forceRerender()
@@ -88,7 +83,7 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
         object : ToggleAction(
             MjmlBundle.message("split_editor.action.keep_scroll_position.text"),
             MjmlBundle.message("split_editor.action.keep_scroll_position.description"),
-            AllIcons.Actions.SynchronizeScrolling,
+            EditorIcons.SYNCHRONIZE_SCROLLING,
         ) {
             override fun isSelected(e: AnActionEvent): Boolean = secondEditor.isScrollSync()
 
@@ -101,7 +96,7 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
         object : ToggleAction(
             MjmlBundle.message("split_editor.action.background_mode.text"),
             MjmlBundle.message("split_editor.action.background_mode.description"),
-            EditorIcons.SUN,
+            EditorIcons.LIGHT_THEME,
         ) {
             override fun isSelected(e: AnActionEvent): Boolean = secondEditor.isDarkMode()
 
@@ -114,12 +109,12 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
                 when (secondEditor.isDarkMode()) {
                     true -> {
                         backgroundMode = MjmlJCEFHtmlPanel.BackgroundMode.Light
-                        icon = EditorIcons.SUN
+                        icon = EditorIcons.LIGHT_THEME
                     }
 
                     false -> {
                         backgroundMode = MjmlJCEFHtmlPanel.BackgroundMode.Dark
-                        icon = EditorIcons.MOON
+                        icon = EditorIcons.DARK_THEME
 
                     }
                 }
@@ -129,7 +124,7 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
             }
         },
         Separator.create(),
-        object : ToggleAction("Show HTML", "", AllIcons.FileTypes.Html) {
+        object : ToggleAction("Show HTML", "", EditorIcons.HTML) {
             override fun isSelected(e: AnActionEvent): Boolean = secondEditor.isHtmlPreview()
 
             override fun getActionUpdateThread(): ActionUpdateThread = BGT
@@ -156,8 +151,8 @@ open class MjmlSplitEditor(private val mainEditor: TextEditor, val secondEditor:
 
         override fun isSelected(e: AnActionEvent): Boolean = myPreviewWidthStatus == secondEditor.previewWidthStatus
                 && !secondEditor.isHtmlPreview()
-                && layout == Layout.SHOW_EDITOR_AND_PREVIEW
-                && !isVerticalSplit
+                && getLayout() == Layout.SHOW_EDITOR_AND_PREVIEW
+                && !isVerticalSplit()
 
         private fun select() = secondEditor.setPreviewWidth(myPreviewWidthStatus)
 
