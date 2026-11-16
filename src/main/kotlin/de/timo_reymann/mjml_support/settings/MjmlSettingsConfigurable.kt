@@ -5,6 +5,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.project.Project
@@ -23,6 +25,7 @@ import de.timo_reymann.mjml_support.util.FilePluginUtil
 import de.timo_reymann.mjml_support.util.UiTimerUtil
 import java.awt.Desktop
 import java.io.File
+import java.nio.file.Files
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -72,6 +75,15 @@ class MjmlSettingsConfigurable(project: Project) : Configurable, Disposable {
             listOf(rendererPath, MjmlSettings.BUILT_IN)
         }
         comboBox.model = CollectionComboBoxModel(options)
+    }
+
+    private fun openBundledResource(project: Project, resourceName: String) {
+        val inputStream = MjmlSettingsConfigurable::class.java.classLoader.getResourceAsStream(resourceName) ?: return
+        val tempFile = Files.createTempFile(resourceName.replace("/", "_"), "").toFile()
+        tempFile.deleteOnExit()
+        inputStream.use { input -> tempFile.outputStream().use { output -> input.copyTo(output) } }
+        val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(tempFile.toPath()) ?: return
+        FileEditorManager.getInstance(project).openFile(virtualFile, true)
     }
 
     private val panel = panel {
@@ -135,13 +147,30 @@ class MjmlSettingsConfigurable(project: Project) : Configurable, Disposable {
                             }
                         }
                     }
-                    .comment(
-                        MjmlBundle.message(
-                            "settings.node_script.help",
-                            BuiltinRenderResourceProvider.getBundledMjmlVersion()
-                        )
-                    )
+                    .comment(MjmlBundle.message("settings.node_script.help"))
             }.layout(RowLayout.PARENT_GRID)
+            buttonsGroup(MjmlBundle.message("settings.mjml_version.text"), true) {
+                row {
+                    radioButton(
+                        MjmlBundle.message(
+                            "settings.mjml_version.v4.text",
+                            BuiltinRenderResourceProvider.getBundledMjmlVersion(MjmlVersion.V4)
+                        ),
+                        MjmlVersion.V4.id
+                    ).comment(MjmlBundle.message("settings.mjml_version.v4.help"))
+                }
+                row {
+                    radioButton(
+                        MjmlBundle.message(
+                            "settings.mjml_version.v5.text",
+                            BuiltinRenderResourceProvider.getBundledMjmlVersion(MjmlVersion.V5)
+                        ),
+                        MjmlVersion.V5.id
+                    ).comment(MjmlBundle.message("settings.mjml_version.v5.help"))
+                }
+            }
+                .bind(state::mjmlVersion)
+                .visible(MjmlRendererServiceUtils.isJavaScriptPluginAvailable())
             row {
                 comboBox(MutableCollectionComboBoxModel<String>(), null)
                     .label(MjmlBundle.message("settings.wasi_binary.text"))
@@ -211,6 +240,18 @@ class MjmlSettingsConfigurable(project: Project) : Configurable, Disposable {
                             this.isEnabled = true
                         }
                     }
+                }
+            }
+        }
+
+        collapsibleGroup(MjmlBundle.message("settings.group.license_info")) {
+            row {
+                button(MjmlBundle.message("settings.license_info.show_license")) {
+                    openBundledResource(project, "LICENSE")
+                }
+
+                button(MjmlBundle.message("settings.license_info.show_notice")) {
+                    openBundledResource(project, "NOTICE")
                 }
             }
         }

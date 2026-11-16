@@ -13,8 +13,10 @@ import de.timo_reymann.mjml_support.settings.MjmlSettingsChangedListener
 object MjmlRendererServiceUtils {
     fun isJavaScriptPluginAvailable(): Boolean {
         val jsPluginId = PluginId.getId("JavaScript")
-        val plugin = PluginManagerCore.getPlugin(jsPluginId)
-        return plugin != null && !PluginManagerCore.isDisabled(jsPluginId)
+        // Use only public API: PluginManagerCore.getPlugin and PluginManager.findEnabledPlugin are
+        // both @ApiStatus.Internal, whereas isPluginInstalled (installed on disk) and isDisabled
+        // (explicitly turned off) are public and together mean "installed and enabled".
+        return PluginManagerCore.isPluginInstalled(jsPluginId) && !PluginManagerCore.isDisabled(jsPluginId)
     }
 }
 

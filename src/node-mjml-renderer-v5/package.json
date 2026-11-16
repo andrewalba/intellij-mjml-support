@@ -1,18 +1,18 @@
 {
-  "name": "intellij-mjml-support-renderer",
+  "name": "intellij-mjml-support-renderer-v5",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "mjml": "4.18.0"
+    "mjml": "5.4.0"
   },
   "scripts": {
-    "build": "deterministic-zip -r ../main/resources/node/renderer.zip .",
+    "build": "deterministic-zip -r ../main/resources/node/renderer-v5.zip .",
     "test": "jest"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^29.7.0"
+    "jest": "^30.0.0"
   }
 }

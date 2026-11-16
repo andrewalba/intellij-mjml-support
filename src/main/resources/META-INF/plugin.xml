@@ -41,6 +41,66 @@
     <!-- language=html -->
     <change-notes><![CDATA[
         <ul>
+            <li>5.8.0
+                <ul>
+                    <li>Update bundled MJML v5 to v5.4.0(<a href="https://github.com/timo-reymann/intellij-mjml-support/pull/386">#386</a>)</li>
+                </ul>
+            </li>
+            <li>5.7.0
+                <ul>
+                    <li>The bundled MJML version now defaults to <b>v5</b> (was v4)
+                        <ul>
+                            <li>Projects using v4 &mdash; including those on the previous default &mdash; switch to v5 after updating. Note that v5 produces different HTML (new minifier, mj-body driven body tag) and requires Node.js 20 or newer</li>
+                            <li>To keep the old output, select v4 again under <b>Settings &gt; Tools &gt; MJML Settings &gt; Bundled MJML version</b>; v4 stays available in legacy/maintenance mode</li>
+                        </ul>
+                    </li>
+                    <li>Faster side-by-side preview: render parameters are now streamed to the Node renderer over stdin instead of being written to a temporary file on every render, removing per-keystroke temp-file disk I/O from the preview update path</li>
+                    <li>Updated to current IntelliJ Platform APIs for forward compatibility with newer IDE versions (no functional change)</li>
+                </ul>
+            </li>
+            <li>5.6.0
+                <ul>
+                    <li>Bundle MJML v5 alongside v4 (<a
+                            href="https://github.com/timo-reymann/intellij-mjml-support/issues/362">#362</a>)
+                        <ul>
+                            <li>v4 remains the default for backwards compatibility and is now in maintenance mode (critical fixes only)</li>
+                            <li>Opt into v5 under <b>Settings &gt; Tools &gt; MJML Settings &gt; Bundled MJML version</b></li>
+                            <li>v5 requires Node.js 20 or newer; the preview shows a clear error if the project Node interpreter is older</li>
+                            <li>v5 enables <code>mj-include</code> automatically by passing <code>includePath</code> to <code>mjml2html()</code>, including the project root so parent-directory includes (e.g. <code>../layout/header.mjml</code>) work without extra configuration</li>
+                            <li>See <a href="https://github.com/mjmlio/mjml/releases/tag/v5.0.0">MJML 5 release notes</a> for behavior changes (new minifier, mj-body driven body tag, removed migration helper)</li>
+                        </ul>
+                    </li>
+                    <li>Update built-in attribute analysis for MJML v5 changes:
+                        <ul>
+                            <li>Add <code>id</code> attribute on <code>mj-body</code></li>
+                            <li>Allow free-form CSS values for <code>border-radius</code> / <code>inner-border-radius</code> across all components (was pixel-only on <code>mj-column</code>/<code>mj-image</code>)</li>
+                        </ul>
+                    </li>
+                    <li>Quiet noisy <code>[MJML security]</code> stderr lines from MJML v5 in the IDE log (now logged at debug level)</li>
+                    <li>Fix preview occasionally showing HTML from a different editor when several MJML files are rendered concurrently</li>
+                    <li>Fix preview web view going blank after startup while the source view still showed the rendered HTML</li>
+                    <li>Fix transient <code>Cannot find module</code> errors during the first render after IDE start by extracting the bundled renderer atomically</li>
+                    <li>Fix sporadic <code>Already disposed</code> exception logged when switching tabs as an MJML preview was being closed</li>
+                </ul>
+            </li>
+            <li>5.5.2
+                <ul>
+                    <li>Add missing title attribute for mj-button to analysis (<a
+                            href="https://github.com/timo-reymann/intellij-mjml-support/issues/354">#354</a>)</li>
+                </ul>
+            </li>
+            <li>5.5.1
+                <ul>
+                    <li>Fix preview broken on IntelliJ 2026.1 due to missing okio dependency (<a
+                            href="https://github.com/timo-reymann/intellij-mjml-support/issues/354">#354</a>)
+                    </li>
+                </ul>
+            </li>
+            <li>5.5.0
+                <ul>
+                    <li>Add license information section to settings dialog to view LICENSE and NOTICE files</li>
+                </ul>
+            </li>
             <li>5.4.0
                 <ul>
                     <li>Upgrade bundled MJML to <a href="https://github.com/mjmlio/mjml/releases/tag/v4.17.2">v4.17.2</a></li>

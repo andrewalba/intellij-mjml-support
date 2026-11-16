@@ -65,6 +65,7 @@ class BuiltInMjmlTagInformationProvider : MjmlTagInformationProvider() {
                     ATTRIBUTE_BACKGROUND_COLOR,
                     ATTRIBUTE_CSS_CLASS,
                     ATTRIBUTE_MJ_CLASS,
+                    MjmlAttributeInformation("id", MjmlAttributeType.STRING, "id attribute placed on the rendered <body> tag (MJML v5+)"),
                     MjmlAttributeInformation("width", MjmlAttributeType.PIXEL, "email's width")
                 ),
                 allowedParentTags = PARENT_TOP_LEVEL_ONLY
@@ -337,6 +338,7 @@ class BuiltInMjmlTagInformationProvider : MjmlTagInformationProvider() {
                         MjmlAttributeType.STRING,
                         "text transform for button link"
                     ),
+                    ATTRIBUTE_TITLE,
                     MjmlAttributeInformation(
                         "vertical-align",
                         MjmlAttributeType.STRING,
@@ -509,7 +511,7 @@ class BuiltInMjmlTagInformationProvider : MjmlTagInformationProvider() {
                     ),
                     MjmlAttributeInformation(
                         "inner-border-radius",
-                        MjmlAttributeType.PIXEL,
+                        MjmlAttributeType.STRING,
                         "css border format ; requires a padding"
                     ),
                     ATTRIBUTE_WIDTH,
@@ -999,6 +1001,11 @@ class BuiltInMjmlTagInformationProvider : MjmlTagInformationProvider() {
                         "make the section full-width"
                     ),
                     MjmlAttributeInformation(
+                        "gutter",
+                        MjmlAttributeType.COMPLEX,
+                        "spacing between columns"
+                    ),
+                    MjmlAttributeInformation(
                         "padding",
                         MjmlAttributeType.COMPLEX,
                         "supports up to 4 parameters",
@@ -1100,6 +1107,7 @@ class BuiltInMjmlTagInformationProvider : MjmlTagInformationProvider() {
                     ),
                     ATTRIBUTE_ALT,
                     ATTRIBUTE_BACKGROUND_COLOR,
+                    ATTRIBUTE_BORDER,
                     ATTRIBUTE_BORDER_RADIUS,
                     ATTRIBUTE_COLOR,
                     ATTRIBUTE_CSS_CLASS,

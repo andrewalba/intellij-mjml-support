@@ -1,3 +1,4 @@
+import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 fun getVersionDetails(): com.palantir.gradle.gitversion.VersionDetails =
@@ -28,20 +29,29 @@ repositories {
     intellijPlatform {
         defaultRepositories()
     }
+
+    // Workaround for ORT Gradle Inspector NPE: localPlatformArtifacts() creates an Ivy repo with
+    // absolute patterns but no URL, causing UrlArtifactRepository.getUrl() to return null.
+    // Setting a placeholder URL does not affect resolution since the patterns are absolute paths.
+    forEach {
+        if (it is IvyArtifactRepository && it.url == null) {
+            it.setUrl(layout.buildDirectory.dir("tmp/ivy-placeholder"))
+        }
+    }
 }
 
 plugins {
     id("java")
-    kotlin("jvm") version "2.3.0"
-    id("org.jetbrains.intellij.platform") version "2.11.0"
-    id("com.palantir.git-version") version "3.3.0"
+    kotlin("jvm") version "2.4.10"
+    id("org.jetbrains.intellij.platform") version "2.20.0"
+    id("com.palantir.git-version") version "5.1.0"
     id("com.adarshr.test-logger") version "4.0.0"
 }
 
 dependencies {
-    implementation("com.dylibso.chicory","runtime","1.6.1")
-    implementation("com.dylibso.chicory","wasi","1.6.1")
-    implementation("com.dylibso.chicory","compiler","1.6.1")
+    implementation("com.dylibso.chicory","runtime","1.7.5")
+    implementation("com.dylibso.chicory","wasi","1.7.5")
+    implementation("com.dylibso.chicory","compiler","1.7.5")
 
     testImplementation("junit", "junit", "4.13.2")
 
@@ -89,6 +99,13 @@ kotlin {
 }
 
 tasks {
+    val copyLicenseFiles by registering(Copy::class) {
+        from(rootDir) {
+            include("LICENSE", "NOTICE")
+        }
+        into(layout.buildDirectory.dir("generated/resources/license"))
+    }
+
     test {
         testLogging {
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -98,5 +115,11 @@ tasks {
 
         // Prevent "File access outside allowed roots" in multi-module tests, because modules each have an .iml
         environment("NO_FS_ROOTS_ACCESS_CHECK", "1")
+    }
+}
+
+sourceSets {
+    main {
+        resources.srcDir(tasks.named("copyLicenseFiles").map { (it as Copy).destinationDir })
     }
 }

@@ -2,7 +2,6 @@ package de.timo_reymann.mjml_support.editor.rendering
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import okio.Path.Companion.toPath
 import java.nio.file.Paths
 import kotlin.io.path.Path
 import kotlin.io.path.readBytes
@@ -24,9 +23,7 @@ class WasiMjmlRenderer(project: Project) : BaseMjmlRenderer(project) {
             return BuiltinRenderResourceProvider.getBuiltinWasiRenderer()
         }
 
-        return mjmlSettings.rendererWASIPath
-            .toPath(true)
-            .toNioPath()
+        return Path(mjmlSettings.rendererWASIPath)
             .readBytes()
     }
 

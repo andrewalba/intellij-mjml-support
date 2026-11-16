@@ -1,21 +1,21 @@
 version: '2.1'
 
 orbs:
-  github-cli: circleci/github-cli@2.7.2
+  github-cli: circleci/github-cli@3.0.0
   node: circleci/node@7.2.1
-  rust: circleci/rust@1.7.0
+  rust: circleci/rust@2.0.0
 
 executors:
   gradle:
     working_directory: ~/workspace
     docker:
-      - image: cimg/openjdk:21.0.9
+      - image: cimg/openjdk:21.0.13
   node:
     docker:
       - image: cimg/node:lts
   rust:
     docker:
-      - image: cimg/rust:1.93.0
+      - image: cimg/rust:1.99.1
 
 commands:
   check-changed-files-or-halt:
@@ -42,15 +42,25 @@ commands:
           key: v2-gradle-cache-{{ checksum "build.gradle.kts" }}
 
 jobs:
-  test-node-renderer:
+  test-node-renderer-v4:
     executor: node
     steps:
       - checkout
       - node/install-packages:
-          app-dir: src/node-mjml-renderer
+          app-dir: src/node-mjml-renderer-v4
       - run:
           name: Run tests
-          command: cd src/node-mjml-renderer && npm run test
+          command: cd src/node-mjml-renderer-v4 && npm run test
+
+  test-node-renderer-v5:
+    executor: node
+    steps:
+      - checkout
+      - node/install-packages:
+          app-dir: src/node-mjml-renderer-v5
+      - run:
+          name: Run tests
+          command: cd src/node-mjml-renderer-v5 && npm run test
 
   test-plugin:
     resource_class: large
@@ -75,6 +85,7 @@ jobs:
           working_directory: ~/project/src/wasm-mrml-renderer
 
   build:
+    resource_class: large
     executor: gradle
     steps:
       - checkout
@@ -110,6 +121,7 @@ jobs:
 
   publish_to_marketplace:
     executor: gradle
+    resource_class: large
     steps:
       - checkout
       - retrieve_cache
@@ -118,7 +130,7 @@ jobs:
           name: Retrieve plugin file
       - run:
           name: Publish plugin
-          command: ./gradlew publishPlugin
+          command: ./gradlew buildPlugin publishPlugin
 
   create_github_release:
     executor: gradle
@@ -143,7 +155,11 @@ workflows:
           filters:
             branches:
               only: /.*/
-      - test-node-renderer:
+      - test-node-renderer-v4:
+          filters:
+            branches:
+              only: /.*/
+      - test-node-renderer-v5:
           filters:
             branches:
               only: /.*/
@@ -154,15 +170,13 @@ workflows:
       - build_and_publish_snapshot:
           requires:
             - test-plugin
-            - test-node-renderer
+            - test-node-renderer-v4
+            - test-node-renderer-v5
             - test-wasi-renderer
           filters:
             branches:
               only: /.*/
-      - build:
-          filters:
-            tags:
-              only: /.*/
+      - build
       - create_github_release:
           filters:
             branches:
@@ -170,8 +184,6 @@ workflows:
             tags:
               only: /.*/
       - publish_to_marketplace:
-          requires:
-            - build
           filters:
             branches:
               ignore: /.*/
